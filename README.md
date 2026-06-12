@@ -11,14 +11,14 @@ The system has three tiers:
 | Agent | Tier | Role | Model |
 |---|---|---|---|
 | `iohan-powers-orchestrator` | orchestrator | Two laws: inspect ground truth personally, never implement. Plan gate, roster dispatch, status protocol, layered evidence chain, retrospective loop. | `inherit` |
-| `iohan-powers-creative-advisor` | advisor | Design counsel: converts desires into mechanisms, partitions trust, maps failure modes, cuts scope (YAGNI). | `opus` |
-| `iohan-powers-debug-advisor` | advisor | Defect-localization counsel: reproduces with production inputs, hypothesis trees, read-only inspector subagents, root cause + evidence chain. | `opus` |
-| `iohan-powers-technical-advisor` | advisor | General-purpose infrastructure counsel: 8-step thinking loop (reframe → prior → inspect → reconcile → classify → strategize → red-team → write), tiered inspection with read-only inspector subagents, capacity math, bottleneck taxonomy, runway/cloud doctrine, confidence-graded verdicts with expiry. | `opus` |
+| `iohan-powers-creative-advisor` | advisor | Design counsel: converts desires into mechanisms, partitions trust, maps failure modes, cuts scope (YAGNI). | `fable` (falls back to `opus`) |
+| `iohan-powers-debug-advisor` | advisor | Defect-localization counsel: reproduces with production inputs, hypothesis trees, read-only inspector subagents, root cause + evidence chain. | `fable` (falls back to `opus`) |
+| `iohan-powers-technical-advisor` | advisor | General-purpose infrastructure counsel: 8-step thinking loop (reframe → prior → inspect → reconcile → classify → strategize → red-team → write), tiered inspection with read-only inspector subagents, capacity math, bottleneck taxonomy, runway/cloud doctrine, confidence-graded verdicts with expiry. | `fable` (falls back to `opus`) |
 | `iohan-powers-implementer` | seat | One task exactly, strict TDD with a watched failure, recon before writing, gates pasted not summarized, honest 4-status protocol (DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED). | `inherit` (dispatch `haiku` mechanical / `sonnet` integration) |
 | `iohan-powers-spec-reviewer` | seat | Anti-anchored compliance check: builds its own requirement checklist from the task text BEFORE seeing the diff, reads the implementer's report LAST. Falsifiability test per requirement. Binary ✅/❌, complete enumeration. | `inherit` (dispatch `sonnet`) |
 | `iohan-powers-quality-reviewer` | seat | Craft review calibrated to the codebase's own bar: failure-path read, beyond-the-diff duplication hunt, test durability, security sweep. Severity by named consequence (Critical/Important/Minor). | `inherit` (dispatch `sonnet`) |
 | `iohan-powers-fix-agent` | seat | Findings list = entire scope. Reproduce-before-fix (failing test first), never weakens the test that exposed a defect, per-finding resolution map, disputes through the channel — never silently. | `inherit` (dispatch = task's implementer model) |
-| `iohan-powers-final-reviewer` | seat | The only pass that can see the seams: seam matrix between tasks, whole-tree lockstep greps for rename survivors, invariant bypass trace, coverage statement, review-escapes for the retrospective. | `opus` |
+| `iohan-powers-final-reviewer` | seat | The only pass that can see the seams: seam matrix between tasks, whole-tree lockstep greps for rename survivors, invariant bypass trace, coverage statement, review-escapes for the retrospective. | `opus` (dispatch `fable` to upgrade) |
 
 ---
 
@@ -82,9 +82,9 @@ claude --version
 
 First run prompts for login (Anthropic account or API key).
 
-### 2. Opus access
+### 2. Fable / Opus access
 
-The three advisors and the final reviewer pin `model: opus`. You need a plan/API key with Opus access (Claude Pro/Max, or Console API billing). Without it those seats fall back or error. The orchestrator and the other working seats use `inherit`, so they run on any model — and the orchestrator's model ladder (cheap for mechanical, standard for integration/reviews, top for the final review) is passed per-dispatch.
+The top-model seats want the best reasoning available: **Fable first, Opus as fallback**. The three advisors pin `model: fable`; the final reviewer pins `model: opus` (pass `model: fable` at dispatch to upgrade it). You need a plan/API key with Fable and/or Opus access (Claude Pro/Max, or Console API billing) — without Fable the advisors fall back to whatever top model your plan offers; without either, edit the frontmatter to a model you have. The orchestrator and the other working seats use `inherit`, so they run on any model — and the orchestrator's model ladder (cheap for mechanical, standard for integration/reviews, top tier Fable→Opus for the final review) is passed per-dispatch.
 
 ### 3. (Strongly recommended) superpowers skill suite
 

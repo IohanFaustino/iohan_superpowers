@@ -96,7 +96,8 @@ back per the table when something is missing.
 | **Domain skills library** (`fullstack-dev-skills:*` — python-pro, react-expert, test-master, sql-pro, devops-engineer…) | the skills implementers/fix-agents LOAD at turn start (project CLAUDE.md usually maps file-type → skill); keeps type/lint hygiene consistent across fleet members | implementers rely on recon (reading neighbors) alone for idiom; acceptable, weaker |
 
 Model access assumed: a cheap tier (`haiku`), a standard tier (`sonnet`),
-and a top tier (`opus`) selectable per dispatch. If only one model is
+and a top tier (`fable` preferred, `opus` fallback) selectable per
+dispatch. If only one model is
 available, the ladder collapses — keep the seat separation anyway; the
 checker-never-author law is worth more than the cost discipline.
 
@@ -134,7 +135,7 @@ task):
 | Spec reviewer | `iohan-powers-spec-reviewer` | `sonnet` | Anti-anchored: own checklist from task text FIRST, report read LAST. Falsifiability check per requirement. ✅/❌, complete enumeration |
 | Quality reviewer | `iohan-powers-quality-reviewer` | `sonnet` | Only after spec ✅. Calibrates to the codebase's own bar; failure-path + beyond-diff + test-durability + security passes; severity by named consequence |
 | Fix agent | `iohan-powers-fix-agent` | same model the task's implementer used (escalate one rung if the failure was reasoning-shaped) | Findings = entire scope; reproduce-before-fix; per-finding resolution map; disputes through the channel |
-| Final reviewer | `iohan-powers-final-reviewer` | `opus` (baked into its file) | Once, after ALL tasks: seam matrix, whole-tree lockstep greps, invariant bypass trace, coverage statement, review-escapes |
+| Final reviewer | `iohan-powers-final-reviewer` | top tier — `fable` preferred, `opus` fallback (file bakes `opus`; pass `model: fable` at dispatch to upgrade) | Once, after ALL tasks: seam matrix, whole-tree lockstep greps, invariant bypass trace, coverage statement, review-escapes |
 
 Loop: ❌ or Changes-needed → dispatch `iohan-powers-fix-agent` (fresh,
 given the reviewer's findings verbatim + exact file paths + the
@@ -185,7 +186,8 @@ final holistic review. Escalate on BLOCKED-for-reasoning, never by default.
 
 ### Advisor seats — counsel without delegation of authority
 
-Besides workers and reviewers there are **advisors**: top-model consultation
+Besides workers and reviewers there are **advisors**: top-model
+(`fable` first; `opus` if Fable unavailable) consultation
 seats you call with a brief and get structured counsel back. They never
 implement and never decide — you do. Available:
 

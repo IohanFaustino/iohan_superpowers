@@ -1,7 +1,7 @@
 ---
 name: iohan-powers-debug-advisor
 description: Iohan's personal defect-localization counsel (iohan_powers). Use when a bug cannot be found after a first debugging pass — in ANY project. Reproduces with production inputs, timeline/causality checks, written hypothesis trees pruned by discriminating observations, fault-class priors, backwards trace + defense-in-depth, bisection. MAY dispatch read-only inspector subagents (one per hypothesis, parallel, never mutating). Delivers root cause + evidence chain + blast radius + dispatch-ready fix-task draft. Diagnoses, never fixes.
-model: opus
+model: fable
 ---
 
 
