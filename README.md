@@ -24,49 +24,30 @@ The system has three tiers:
 
 ## How it behaves — connecting the dots
 
+**Main flow** — one task at a time, top to bottom:
+
 ```mermaid
-flowchart TB
-    USER([User request]) --> ORCH
+flowchart TD
+    A([user request]) --> B[orchestrator<br/>plan gate · dispatches every seat<br/>never writes code]
+    B --> C[implementer<br/>TDD · one task · honest status]
+    C --> D[spec-reviewer<br/>does code match the task text?]
+    D --> E[quality-reviewer<br/>is it good enough to live here?]
+    E --> F{all tasks done?}
+    F -- no, next task --> C
+    F -- yes --> G[final-reviewer<br/>whole-branch: seams · drift · invariants]
+    G --> H([merge / PR])
 
-    subgraph CONSULT["Advisors — counsel only, never implement"]
-        CA["creative-advisor<br/><i>design counsel</i>"]
-        DA["debug-advisor<br/><i>defect localization</i>"]
-        TA["technical-advisor<br/><i>infra & capacity counsel</i>"]
-        INSP["read-only inspector subagents<br/><i>parallel, never mutate</i>"]
-        DA -. dispatches .-> INSP
-        TA -. dispatches .-> INSP
-    end
+    D & E -. ❌ findings .-> X[fix-agent<br/>fix exactly the findings] -. re-review .-> D
+```
 
-    ORCH["<b>orchestrator</b><br/>plan gate · dispatch · evidence chain<br/><i>inspects ground truth, never holds the pen</i>"]
+**Advisors** — consulted by the orchestrator at any point; they counsel, never implement, never decide:
 
-    ORCH -. "idea / design dead-end" .-> CA
-    ORCH -. "bug resists first pass" .-> DA
-    ORCH -. "GPU/workers/RAM/cloud?" .-> TA
-    CA & DA & TA -. "structured counsel<br/>(input to orchestrator's verdict)" .-> ORCH
-
-    subgraph TASK["Per-task roster — fresh context each seat, checker ≠ author"]
-        IMPL["implementer<br/><i>TDD · exact scope · honest status</i>"]
-        SPEC["spec-reviewer<br/><i>own checklist first,<br/>report read last</i>"]
-        QUAL["quality-reviewer<br/><i>local bar · failure paths ·<br/>severity = consequence</i>"]
-        FIX["fix-agent<br/><i>reproduce-before-fix ·<br/>per-finding map</i>"]
-
-        IMPL -- "DONE + evidence" --> SPEC
-        SPEC -- "✅" --> QUAL
-        SPEC -- "❌ findings verbatim" --> FIX
-        QUAL -- "Changes needed" --> FIX
-        FIX -- "resolution map" --> SPEC
-    end
-
-    ORCH -- "task text + curated context<br/>(subagents never read the plan)" --> IMPL
-    IMPL -. "NEEDS_CONTEXT / BLOCKED" .-> ORCH
-    QUAL -- "Approved → next task" --> ORCH
-
-    ORCH -- "after ALL tasks:<br/>whole branch diff vs merge-base" --> FINAL
-    FINAL["final-reviewer (opus)<br/><i>seams between tasks · lockstep greps ·<br/>invariant bypass · coverage statement</i>"]
-    FINAL -- "READY → merge/PR" --> ORCH
-    FINAL -- "NOT READY → final fix tasks" --> FIX
-    FINAL -. "review-escapes<br/>(which seat missed what)" .-> RETRO["retrospective loop"]
-    RETRO -.-> ORCH
+```mermaid
+flowchart LR
+    O[orchestrator] -- design question --> CA[creative-advisor]
+    O -- stubborn bug --> DA[debug-advisor]
+    O -- GPU / workers / RAM / cloud --> TA[technical-advisor]
+    CA & DA & TA -- structured counsel --> O
 ```
 
 The structural laws that make it work:
