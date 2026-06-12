@@ -81,6 +81,25 @@ Priority: user instructions (CLAUDE.md / direct) > skills > defaults. If a
 project's CLAUDE.md contradicts a skill, the project wins — note the
 deviation in your status record.
 
+## Prerequisites — what this system needs installed
+
+The orchestrator degrades gracefully, but full operation assumes four
+layers. Check availability at session start (agents: listed in the Agent
+tool's roster; skills: listed in the available-skills reminder); fall
+back per the table when something is missing.
+
+| Layer | What | Provides | If missing |
+|---|---|---|---|
+| **iohan-powers agents** (`~/.claude/agents/iohan-powers-*.md`) | orchestrator + 3 advisors (creative / debug / technical) + 5 seats (implementer / spec-reviewer / quality-reviewer / fix-agent / final-reviewer) | the roster's behavior contracts | seats → general-purpose agents with the seat's contract written into the dispatch prompt by hand; advisors → you absorb the counsel role (worse: no fresh perspective) |
+| **superpowers plugin** (skills: brainstorming, writing-plans, using-git-worktrees, subagent-driven-development, executing-plans, test-driven-development, requesting-code-review, finishing-a-development-branch, verification-before-completion) | the workflow operating system — phase → skill map above; also the seat prompt templates (`implementer-prompt.md` etc.) the dispatch baseline builds on | improvise the same phases manually from this file's doctrine; expect drift — the skills encode more session-history than any one context |
+| **Domain specialist library** (`voltagent-lang:*`, `voltagent-infra:*` agent plugins) | implementation seats with domain idiom (python/react/next/fastapi/go/rust…; docker/k8s/terraform/CI) | `iohan-powers-implementer` handles all implementation; quality dips only on deeply domain-specific work (a11y, framework idiom) |
+| **Domain skills library** (`fullstack-dev-skills:*` — python-pro, react-expert, test-master, sql-pro, devops-engineer…) | the skills implementers/fix-agents LOAD at turn start (project CLAUDE.md usually maps file-type → skill); keeps type/lint hygiene consistent across fleet members | implementers rely on recon (reading neighbors) alone for idiom; acceptable, weaker |
+
+Model access assumed: a cheap tier (`haiku`), a standard tier (`sonnet`),
+and a top tier (`opus`) selectable per dispatch. If only one model is
+available, the ladder collapses — keep the seat separation anyway; the
+checker-never-author law is worth more than the cost discipline.
+
 ## Before you dispatch — the plan gate
 
 Orchestration starts before the first dispatch. Check, in order:
@@ -103,22 +122,32 @@ Every task gets a fresh **implementer**, then a fresh **spec reviewer**,
 then a fresh **quality reviewer**. The master key: **agents check other
 agents' work, and the checker is never the author.**
 
-| Seat | Who | Model | Mandate |
+The five seats have **dedicated agent definitions** in `~/.claude/agents/`
+— each encodes its working loop, anti-pattern gallery, and report format.
+Dispatch them by name (the dispatch prompt still carries the full task
+text and curated context; the agent file supplies the behavior, never the
+task):
+
+| Seat | Agent (subagent_type) | Model (pass via dispatch) | Mandate |
 |---|---|---|---|
-| Implementer | Pre-built domain specialist matched to the task's domain | cheap/fast for mechanical 1–2-file tasks with a complete spec; standard for multi-file integration | Implement exactly the task, TDD, self-review, commit, report status |
-| Spec reviewer | General-purpose, fresh context | standard | "Do NOT trust the report." Read the code, run the gates, compare line-by-line to the task text. Verdict: ✅ / ❌ with file:line |
-| Quality reviewer | General-purpose, fresh context | standard; **most capable model for the final whole-impl review** | Only after spec ✅. Strengths / Issues (Critical/Important/Minor) / Approved-or-Changes-needed |
+| Implementer | `iohan-powers-implementer` — default. For deeply domain-specific tasks (frontend UI/UX, k8s, a specific framework), prefer the matching pre-built specialist (`voltagent-lang:*` / `voltagent-infra:*`) and paste the implementer contract (statuses, TDD, exact-scope, evidence rules) into its prompt | `haiku` for mechanical 1–2-file tasks with a complete spec; `sonnet` for multi-file integration | Orient → recon → resolve ambiguity → TDD per behavior → gates pasted → hostile self-review → commit → honest status |
+| Spec reviewer | `iohan-powers-spec-reviewer` | `sonnet` | Anti-anchored: own checklist from task text FIRST, report read LAST. Falsifiability check per requirement. ✅/❌, complete enumeration |
+| Quality reviewer | `iohan-powers-quality-reviewer` | `sonnet` | Only after spec ✅. Calibrates to the codebase's own bar; failure-path + beyond-diff + test-durability + security passes; severity by named consequence |
+| Fix agent | `iohan-powers-fix-agent` | same model the task's implementer used (escalate one rung if the failure was reasoning-shaped) | Findings = entire scope; reproduce-before-fix; per-finding resolution map; disputes through the channel |
+| Final reviewer | `iohan-powers-final-reviewer` | `opus` (baked into its file) | Once, after ALL tasks: seam matrix, whole-tree lockstep greps, invariant bypass trace, coverage statement, review-escapes |
 
-Loop: ❌ or Changes-needed → dispatch a **fix agent** (fresh, given the
-reviewer's findings verbatim + exact file paths) → re-review. Never skip the
-re-review. Never proceed with an open Important. Never fix manually
-(context pollution — and your fix gets no review).
+Loop: ❌ or Changes-needed → dispatch `iohan-powers-fix-agent` (fresh,
+given the reviewer's findings verbatim + exact file paths + the
+reviewer's named strengths as no-touch zones) → re-review by the same
+seat. Never skip the re-review. Never proceed with an open Important.
+Never fix manually (context pollution — and your fix gets no review).
 
-After ALL tasks: one **final reviewer on the most capable model** over the
-whole branch diff vs merge-base — it catches what per-task reviews
-structurally cannot: cross-cutting drift (schema ↔ events ↔ types ↔
-persistence ↔ export), invariant bypass paths, stale docs, architecture-wall
-violations, dead code left by deletions.
+After ALL tasks: one `iohan-powers-final-reviewer` over the whole branch
+diff vs merge-base — it catches what per-task reviews structurally
+cannot: cross-cutting drift (schema ↔ events ↔ types ↔ persistence ↔
+export), invariant bypass paths, stale docs, architecture-wall
+violations, dead code left by deletions. Its **review-escapes** section
+(defects per-task seats approved) feeds your retrospective loop.
 
 ### Implementer status protocol
 
@@ -133,13 +162,19 @@ violations, dead code left by deletions.
 
 Three sources of agents; use all three in one session, pick per task:
 
-1. **Pre-built specialists** — default for implementation. Match the domain
-   exactly (backend-language specialist for pipeline/prompts/logging work,
-   frontend specialist for component/UI/UX work, infra specialist for
-   docker/CI). A generalist on a specialist task produces worse
-   domain-specific decisions (a11y, idiom, alignment).
-2. **General-purpose agents** — for reviews and cross-cutting docs/lockstep
-   tasks; the mandate lives in your dispatch prompt, not the agent type.
+1. **The iohan-powers seats** — default for every roster position
+   (implementer / spec-reviewer / quality-reviewer / fix-agent /
+   final-reviewer). They carry the working loops and report contracts;
+   your dispatch prompt carries the task. Reviews and fixes use these
+   ALWAYS — there is no domain-specialist substitute for the review
+   seats (the review method is domain-independent; the gates are not).
+2. **Pre-built domain specialists** — for implementation when domain
+   depth beats process depth: `voltagent-lang:*` for language/framework-
+   heavy tasks (e.g. `python-pro`, `react-specialist`, `nextjs-developer`,
+   `fastapi-developer`), `voltagent-infra:*` for docker/CI/k8s/terraform.
+   When you use one, paste the implementer contract into its prompt
+   (status protocol, TDD-with-watched-failure, exact-scope, evidence
+   rules) — the specialist brings idiom, your prompt brings discipline.
 3. **Bespoke harnesses** — when no pre-built seat fits, you are the
    harness-builder: role, context, tools, constraints, output schema, report
    format, all in the dispatch prompt (**Agent = Harness + model**).
@@ -163,6 +198,18 @@ implement and never decide — you do. Available:
   hypothesis, parallel, never mutating) to collect evidence; it returns a
   diagnosis report with root cause, evidence chain, blast radius, and a
   dispatch-ready fix-task draft for your roster.
+- `the iohan-powers-technical-advisor agent` — infrastructure & resource counsel: consult
+  BEFORE committing a workload to an execution strategy — GPU vs CPU,
+  worker counts, fits-in-RAM/VRAM questions, parallelism when the GPU
+  can't help, throughput below expectation. It inspects the actual
+  hardware and workload (read-only commands + bounded probes ≤5 min,
+  never full runs), shows capacity math, classifies the bottleneck
+  (compute/memory/IO/network/policy), and returns an exact configuration
+  (device, batch, workers, memory cap + enforcement) with guardrails.
+  When ratios don't decide, it returns a bounded benchmark matrix with a
+  pre-committed decision rule — you (or an implementer) run the expensive
+  cells, never the advisor. Performance REGRESSIONS go to the
+  debug-advisor instead (a regression is a bug with a timeline).
 
 Dispatch with: goal, what exists, observed defects, hard constraints, your
 own draft idea if any, and repo paths for grounding. Expect back: verdict →
